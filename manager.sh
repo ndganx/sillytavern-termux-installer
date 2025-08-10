@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-# SillyTavern 管理器 v2.6 - 完整功能版
+# SillyTavern 管理器 v2.7 - 完整功能版
 # 作者: ndganx
 # GitHub: https://github.com/ndganx/sillytavern-termux-installer
 
@@ -126,7 +126,7 @@ show_menu() {
     
     echo ""
     echo -e "${CYAN}╔═══════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║       SillyTavern 管理系统 v2.6                  ║${NC}"
+    echo -e "${CYAN}║       SillyTavern 管理系统 v2.7                  ║${NC}"
     echo -e "${CYAN}╠═══════════════════════════════════════════════════╣${NC}"
     echo -e "${CYAN}║${NC} 状态: $STATUS                                    ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC} 当前版本: ${WHITE}$CURRENT_VERSION${NC}"
@@ -134,16 +134,14 @@ show_menu() {
     echo -e "${CYAN}╠═══════════════════════════════════════════════════╣${NC}"
     echo -e "${CYAN}║  [1]${NC} 🚀 启动 SillyTavern                          ${CYAN}║${NC}"
     echo -e "${CYAN}║  [2]${NC} 🛑 停止 SillyTavern                          ${CYAN}║${NC}"
-    echo -e "${CYAN}║  [3]${NC} 🔄 重启 SillyTavern                          ${CYAN}║${NC}"
-    echo -e "${CYAN}║  [4]${NC} ⬆️  更新 SillyTavern                          ${CYAN}║${NC}"
-    echo -e "${CYAN}║  [5]${NC} 📋 查看实时日志                              ${CYAN}║${NC}"
-    echo -e "${CYAN}║  [6]${NC} 💾 备份用户数据                              ${CYAN}║${NC}"
-    echo -e "${CYAN}║  [7]${NC} 📥 恢复用户数据                              ${CYAN}║${NC}"
-    echo -e "${CYAN}║  [8]${NC} 🔧 一键全面更新                              ${CYAN}║${NC}"
-    echo -e "${CYAN}║  [9]${NC} ℹ️  系统信息                                  ${CYAN}║${NC}"
+    echo -e "${CYAN}║  [3]${NC} ⬆️  更新 SillyTavern                          ${CYAN}║${NC}"
+    echo -e "${CYAN}║  [4]${NC} 💾 备份用户数据                              ${CYAN}║${NC}"
+    echo -e "${CYAN}║  [5]${NC} 📥 恢复用户数据                              ${CYAN}║${NC}"
+    echo -e "${CYAN}║  [6]${NC} 🔧 一键全面更新                              ${CYAN}║${NC}"
+    echo -e "${CYAN}║  [7]${NC} ℹ️  系统信息                                  ${CYAN}║${NC}"
     echo -e "${CYAN}║  [0]${NC} 👋 退出                                      ${CYAN}║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════════╝${NC}"
-    echo -ne "${WHITE}请选择 [0-9]: ${NC}"
+    echo -ne "${WHITE}请选择 [0-7]: ${NC}"
 }
 
 # 启动SillyTavern
@@ -208,77 +206,32 @@ start_st() {
         pkg install nodejs -y
     fi
     
-    nohup node server.js > "$LOG_FILE" 2>&1 &
-    echo $! > "$PID_FILE"
+    # 启动服务并直接显示日志
+    echo ""
+    echo -e "${GREEN}✅ 正在启动 SillyTavern...${NC}"
+    echo ""
+    echo -e "${CYAN}📱 访问方式：${NC}"
+    echo -e "   本地访问: ${WHITE}http://localhost:8000${NC}"
     
-    # 真实检测服务是否启动成功
-    echo "等待服务启动..."
-    MAX_WAIT=30  # 最多等待30秒
-    WAIT_COUNT=0
-    
-    # 显示进度条
-    while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
-        # 检查8000端口是否已经打开
-        if curl -s -o /dev/null -w "%{http_code}" http://localhost:8000 2>/dev/null | grep -q "200\|301\|302"; then
-            echo ""
-            echo -e "${GREEN}✅ SillyTavern 启动成功！${NC}"
-            break
-        fi
-        
-        # 检查进程是否还在运行
-        if [ -f "$PID_FILE" ]; then
-            PID=$(cat "$PID_FILE")
-            if ! kill -0 "$PID" 2>/dev/null; then
-                echo ""
-                echo -e "${RED}❌ 启动失败，请查看日志${NC}"
-                tail -n 20 "$LOG_FILE"
-                echo ""
-                echo "按回车返回..."
-                read
-                return
-            fi
-        fi
-        
-        # 显示进度
-        printf "."
-        sleep 1
-        WAIT_COUNT=$((WAIT_COUNT + 1))
-    done
-    
-    if [ $WAIT_COUNT -ge $MAX_WAIT ]; then
-        echo ""
-        echo -e "${YELLOW}⚠️  启动超时，但进程可能仍在运行${NC}"
-        echo "请稍后手动访问 http://localhost:8000"
-    else
-        # 启动成功，显示访问地址
-        echo ""
-        echo -e "${CYAN}📱 访问方式：${NC}"
-        echo -e "   本地访问: ${WHITE}http://localhost:8000${NC}"
-        
-        # 获取局域网IP
-        IP=$(ip addr show wlan0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
-        if [ -n "$IP" ]; then
-            echo -e "   局域网访问: ${WHITE}http://$IP:8000${NC}"
-        fi
-        
-        # 自动打开浏览器
-        echo ""
-        echo -e "${CYAN}正在打开浏览器...${NC}"
-        
-        # Termux特有的打开浏览器方法
-        if command -v termux-open-url >/dev/null 2>&1; then
-            termux-open-url "http://localhost:8000" 2>/dev/null || true
-        elif command -v am >/dev/null 2>&1; then
-            # Android Activity Manager方式
-            am start -a android.intent.action.VIEW -d "http://localhost:8000" 2>/dev/null || true
-        elif command -v xdg-open >/dev/null 2>&1; then
-            # 通用Linux方式
-            xdg-open "http://localhost:8000" 2>/dev/null || true
-        fi
-        
-        echo -e "${GREEN}✨ 浏览器已打开，请查看${NC}"
+    # 获取局域网IP
+    IP=$(ip addr show wlan0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+    if [ -n "$IP" ]; then
+        echo -e "   局域网访问: ${WHITE}http://$IP:8000${NC}"
     fi
     
+    echo ""
+    echo -e "${GRAY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}📋 实时日志 (按 Ctrl+C 返回菜单)${NC}"
+    echo -e "${GRAY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    
+    # 直接运行并显示日志，不使用后台模式
+    node server.js 2>&1 | tee "$LOG_FILE"
+    
+    # 如果用户按Ctrl+C，服务会停止
+    echo ""
+    echo -e "${YELLOW}SillyTavern 已停止${NC}"
+    rm -f "$PID_FILE"
     echo ""
     echo "按回车返回..."
     read
@@ -391,48 +344,6 @@ update_st() {
     read
 }
 
-# 查看日志
-view_logs() {
-    echo ""
-    echo -e "${CYAN}╔═══════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║             📋 日志查看                            ║${NC}"
-    echo -e "${CYAN}╠═══════════════════════════════════════════════════╣${NC}"
-    echo -e "${CYAN}║  [1] 实时日志监控                                 ║${NC}"
-    echo -e "${CYAN}║  [2] 查看最新50行                                 ║${NC}"
-    echo -e "${CYAN}║  [3] 查看错误日志                                 ║${NC}"
-    echo -e "${CYAN}║  [4] 清空日志文件                                 ║${NC}"
-    echo -e "${CYAN}║  [0] 返回主菜单                                   ║${NC}"
-    echo -e "${CYAN}╚═══════════════════════════════════════════════════╝${NC}"
-    echo -ne "请选择 [0-4]: "
-    
-    read choice
-    
-    case $choice in
-        1)
-            echo -e "${GREEN}实时日志 (按 Ctrl+C 退出)${NC}"
-            tail -f "$LOG_FILE"
-            ;;
-        2)
-            echo -e "${CYAN}最新50行日志:${NC}"
-            tail -n 50 "$LOG_FILE"
-            ;;
-        3)
-            echo -e "${RED}错误日志:${NC}"
-            grep -i error "$LOG_FILE" | tail -n 30 || echo "无错误信息"
-            ;;
-        4)
-            > "$LOG_FILE"
-            echo -e "${GREEN}✅ 日志已清空${NC}"
-            ;;
-        0)
-            return
-            ;;
-    esac
-    
-    echo ""
-    echo "按回车返回..."
-    read
-}
 
 # 备份用户数据
 backup_user_data() {
@@ -674,13 +585,11 @@ while true; do
     case $choice in
         1) start_st ;;
         2) stop_st ;;
-        3) stop_st; start_st ;;
-        4) update_st ;;
-        5) view_logs ;;
-        6) backup_user_data ;;
-        7) restore_user_data ;;
-        8) full_system_update ;;
-        9) system_info ;;
+        3) update_st ;;
+        4) backup_user_data ;;
+        5) restore_user_data ;;
+        6) full_system_update ;;
+        7) system_info ;;
         0) 
             echo ""
             echo -e "${GREEN}👋 感谢使用 SillyTavern 管理系统${NC}"

@@ -47,4 +47,4 @@ st
 - [问题反馈](https://github.com/ndganx/sillytavern-termux-installer/issues)
 
 ---
-作者: ndganx | 版本: v2.6
+作者: ndganx | 版本: v2.7

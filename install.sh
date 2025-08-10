@@ -372,67 +372,27 @@ read -r start_now
 if [ "$start_now" = "y" ] || [ "$start_now" = "Y" ]; then
     cd "$ST_ROOT/SillyTavern"
     print_msg "\n正在启动 SillyTavern..." "$GREEN"
-    nohup node server.js > "$ST_ROOT/st.log" 2>&1 &
-    PID_NUM=$!
-    echo "$PID_NUM" > "$ST_ROOT/st.pid"
     
-    # 真实检测服务是否启动成功
-    printf "%b%s%b" "$CYAN" "等待服务启动" "$NC"
-    MAX_WAIT=30
-    WAIT_COUNT=0
+    # 显示访问地址
+    echo ""
+    print_msg "访问地址: http://localhost:8000" "$CYAN"
     
-    while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
-        # 检查8000端口是否已经打开
-        if curl -s -o /dev/null -w "%{http_code}" http://localhost:8000 2>/dev/null | grep -q "200\|301\|302"; then
-            echo ""
-            print_msg "✅ SillyTavern 启动成功！" "$GREEN"
-            
-            # 显示访问地址
-            echo ""
-            print_msg "访问地址: http://localhost:8000" "$CYAN"
-            
-            LOCAL_IP=$(ip addr show wlan0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
-            if [ -n "$LOCAL_IP" ]; then
-                print_msg "局域网地址: http://$LOCAL_IP:8000" "$CYAN"
-            fi
-            
-            # 自动打开浏览器
-            echo ""
-            print_msg "正在打开浏览器..." "$CYAN"
-            
-            # Termux特有的打开浏览器方法
-            if command -v termux-open-url >/dev/null 2>&1; then
-                termux-open-url "http://localhost:8000" 2>/dev/null || true
-                print_msg "✨ 浏览器已打开" "$GREEN"
-            elif command -v am >/dev/null 2>&1; then
-                am start -a android.intent.action.VIEW -d "http://localhost:8000" 2>/dev/null || true
-                print_msg "✨ 浏览器已打开" "$GREEN"
-            else
-                print_msg "请手动打开浏览器访问" "$YELLOW"
-            fi
-            
-            break
-        fi
-        
-        # 检查进程是否还在运行
-        if ! kill -0 "$PID_NUM" 2>/dev/null; then
-            echo ""
-            print_msg "❌ 启动失败，请查看日志" "$RED"
-            tail -n 10 "$ST_ROOT/st.log"
-            break
-        fi
-        
-        printf "."
-        sleep 1
-        WAIT_COUNT=$((WAIT_COUNT + 1))
-    done
-    
-    if [ $WAIT_COUNT -ge $MAX_WAIT ]; then
-        echo ""
-        print_msg "⚠️ 启动超时，请稍后手动访问" "$YELLOW"
+    LOCAL_IP=$(ip addr show wlan0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+    if [ -n "$LOCAL_IP" ]; then
+        print_msg "局域网地址: http://$LOCAL_IP:8000" "$CYAN"
     fi
     
     echo ""
+    print_msg "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "$GRAY"
+    print_msg "📋 实时日志 (按 Ctrl+C 停止)" "$CYAN"
+    print_msg "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "$GRAY"
+    echo ""
+    
+    # 直接运行并显示日志
+    node server.js 2>&1 | tee "$ST_ROOT/st.log"
+    
+    echo ""
+    print_msg "SillyTavern 已停止" "$YELLOW"
     print_msg "提示: 输入 st 可随时打开管理界面" "$YELLOW"
 else
     echo ""
