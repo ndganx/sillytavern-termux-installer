@@ -388,8 +388,8 @@ if [ "$start_now" = "y" ] || [ "$start_now" = "Y" ]; then
     print_msg "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "$GRAY"
     echo ""
     
-    # 直接运行并显示日志
-    node server.js 2>&1 | tee "$ST_ROOT/st.log"
+    # 直接运行并显示日志，禁用自动打开浏览器
+    ST_BROWSER_LAUNCH=false node server.js 2>&1 | tee "$ST_ROOT/st.log"
     
     echo ""
     print_msg "SillyTavern 已停止" "$YELLOW"

@@ -200,6 +200,18 @@ start_st() {
     
     cd "$ST_DIR"
     
+    # 确保配置文件禁用自动打开浏览器
+    if [ -f "config.yaml" ]; then
+        # 如果配置文件存在，修改browserLaunch设置
+        sed -i 's/browserLaunch: true/browserLaunch: false/g' config.yaml 2>/dev/null || true
+    else
+        # 如果不存在，从默认配置复制并修改
+        if [ -f "default/config.yaml" ]; then
+            cp default/config.yaml config.yaml
+            sed -i 's/browserLaunch: true/browserLaunch: false/g' config.yaml 2>/dev/null || true
+        fi
+    fi
+    
     # 检查node是否存在
     if ! command -v node >/dev/null 2>&1; then
         echo -e "${YELLOW}⚠️  Node.js未安装，正在安装...${NC}"
@@ -225,8 +237,8 @@ start_st() {
     echo -e "${GRAY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     
-    # 直接运行并显示日志，不使用后台模式
-    node server.js 2>&1 | tee "$LOG_FILE"
+    # 设置环境变量禁用自动打开浏览器，然后运行服务
+    ST_BROWSER_LAUNCH=false node server.js 2>&1 | tee "$LOG_FILE"
     
     # 如果用户按Ctrl+C，服务会停止
     echo ""
